@@ -486,31 +486,90 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCaseModal();});
 document.querySelectorAll('.option[data-group]').forEach(btn=>{
   btn.addEventListener('click',()=>{
     const group=btn.dataset.group;
-    document.querySelectorAll(`[data-group="${group}"]`).forEach(x=>x.classList.remove('active'));
-    btn.classList.add('active');
-    state[group]={value:btn.dataset.value,price:Number(group==='brand' ? (btn.dataset.pairPrice ?? btn.dataset.price) : btn.dataset.price)};
-    if(group==='power'){
-      document.getElementById('otherPowerWrap').style.display=btn.dataset.value==='Other'?'block':'none';
-      if(btn.dataset.value!=='Other') delete state.otherPower;
-    }
+
+    // Question 10: Extras allows multiple selections
     if(group==='extra'){
       const clicked=btn.dataset.value;
+
       let selected=[];
-      if(state.extra && state.extra.value && state.extra.value!=='None') selected=state.extra.value.split(' + ').filter(Boolean);
-      if(clicked==='None') selected=[];
-      else if(selected.includes(clicked)) selected=selected.filter(x=>x!==clicked);
-      else selected.push(clicked);
-      const priceMap={'Battery Voltage and Charging Port':25,'Custom Name / Logo':20};
-      state.extra={value:selected.length?selected.join(' + '):'None',price:selected.reduce((sum,x)=>sum+(priceMap[x]||0),0)};
-      document.querySelectorAll('[data-group="extra"]').forEach(x=>x.classList.toggle('active', selected.includes(x.dataset.value) || (selected.length===0 && x.dataset.value==='None')));
+      if(state.extra?.value && state.extra.value!=='None'){
+        selected=state.extra.value.split(' + ').filter(Boolean);
+      }
+
+      if(clicked==='None'){
+        selected=[];
+      } else if(selected.includes(clicked)){
+        selected=selected.filter(x=>x!==clicked);
+      } else {
+        selected.push(clicked);
+      }
+
+      const priceMap={
+        'Battery Voltage and Charging Port':25,
+        'Custom Name / Logo':20
+      };
+
+      const extraPrice=selected.reduce(
+        (sum,x)=>sum+(priceMap[x]||0),
+        0
+      );
+
+      state.extra={
+        value:selected.length ? selected.join(' + ') : 'None',
+        price:extraPrice
+      };
+
+      document.querySelectorAll('[data-group="extra"]').forEach(x=>{
+        x.classList.toggle(
+          'active',
+          selected.includes(x.dataset.value) ||
+          (selected.length===0 && x.dataset.value==='None')
+        );
+      });
+
       const needsLogo=selected.includes('Custom Name / Logo');
-      document.getElementById('logoWrap').style.display=needsLogo?'block':'none';
-      if(!needsLogo){delete state.customLogoText;delete state.customLogoFont;delete state.customLogoLocation;}
+
+      document.getElementById('logoWrap').style.display=
+        needsLogo ? 'block' : 'none';
+
+      if(!needsLogo){
+        delete state.customLogoText;
+        delete state.customLogoFont;
+        delete state.customLogoLocation;
+      }
+
+      render();
+      return;
     }
+
+    // All other options remain single-select
+    document.querySelectorAll(`[data-group="${group}"]`)
+      .forEach(x=>x.classList.remove('active'));
+
+    btn.classList.add('active');
+
+    state[group]={
+      value:btn.dataset.value,
+      price:Number(
+        group==='brand'
+          ? (btn.dataset.pairPrice ?? btn.dataset.price)
+          : btn.dataset.price
+      )
+    };
+
+    if(group==='power'){
+      document.getElementById('otherPowerWrap').style.display=
+        btn.dataset.value==='Other' ? 'block' : 'none';
+
+      if(btn.dataset.value!=='Other'){
+        delete state.otherPower;
+      }
+    }
+
     render();
   });
 });
-
+  
 document.getElementById('otherPower').addEventListener('input',e=>{
   state.otherPower={value:e.target.value||'Other',price:0};
   render();
