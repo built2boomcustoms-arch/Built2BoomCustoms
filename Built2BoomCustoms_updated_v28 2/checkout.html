@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checkout | Built2BoomCustoms</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b0d10;color:#f4f4f4;font-family:Arial,Helvetica,sans-serif}.wrap{max-width:1000px;margin:auto;padding:35px 20px 70px}a{color:#fff}.logo{font-weight:900;letter-spacing:1px;margin-bottom:35px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:22px}.card{background:#14171b;border:1px solid #292d32;border-radius:16px;padding:24px}h1{font-size:42px;margin:0 0 8px}h2{margin-top:0}.muted,.note{color:#9da3aa;line-height:1.55}.field{margin:14px 0}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}.field input{width:100%;padding:14px;border-radius:10px;border:1px solid #30343a;background:#0d1013;color:#eee;font-size:16px}.line{display:flex;justify-content:space-between;gap:15px;padding:9px 0;border-bottom:1px solid #292d32;color:#c8ccd1}.total{display:flex;justify-content:space-between;font-size:27px;font-weight:900;padding-top:18px}.btn{width:100%;background:#fff;color:#08090a;border:0;border-radius:9px;padding:16px 22px;font-weight:900;cursor:pointer;margin-top:18px;font-size:16px}.back{display:inline-block;margin-bottom:22px;text-decoration:none;color:#c8ccd1}.error{display:none;background:#3a1616;border:1px solid #743333;color:#ffbcbc;padding:12px;border-radius:10px;margin-top:14px}.loading{opacity:.6;pointer-events:none}@media(max-width:800px){.grid{grid-template-columns:1fr}h1{font-size:34px}}
+</style></head>
+<body><main class="wrap">
+<div class="logo">BUILT2BOOMCUSTOMS</div><a class="back" href="index.html#builder">← Back to Builder</a>
+<h1>Complete Your Order</h1><p class="muted">Pay the full amount for your custom build. There is no deposit. Your payment is processed securely through Stripe.</p>
+<div class="grid"><section class="card"><h2>Customer Information</h2>
+<div class="field"><label for="name">Full Name</label><input id="name" autocomplete="name" required></div>
+<div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required></div>
+<div class="field"><label for="phone">Phone Number</label><input id="phone" type="tel" autocomplete="tel" required></div>
+<p class="note">Your email will be used for your payment receipt and order confirmation.</p>
+<button class="btn" id="pay">PAY IN FULL</button><div class="error" id="error"></div></section>
+<section class="card"><h2>Your Build</h2><div id="build"></div><div class="total"><span>Total</span><span id="total">$0</span></div><p class="note">This is the full purchase price shown by the configurator.</p></section></div>
+</main>
+<script>
+const data=JSON.parse(sessionStorage.getItem('b2b_build')||'null');
+const build=document.getElementById('build'); const total=document.getElementById('total');
+if(!data){build.innerHTML='<p class="muted">No build was found. Go back to the builder and create one.</p>';document.getElementById('pay').disabled=true;}
+else{
+ const labels={case:'Box Size',color:'Color',customColor:'Custom Color',sub:'Subwoofer',subCount:'Subwoofers',subLocation:'Subwoofer Location',subSize:'Subwoofer Size',count:'Speakers',tweeters:'Extra Tweeters',power:'Power System',otherPower:'Custom Power Brand',brand:'Speaker Brand',size:'Speaker Size',extra:'Extras',customLogoText:'Logo Text',customLogoFont:'Logo Font',customLogoLocation:'Logo Location'};
+ const order=['case','color','customColor','sub','subCount','subLocation','subSize','count','tweeters','power','otherPower','brand','size','extra','customLogoText','customLogoFont','customLogoLocation'];
+ build.innerHTML=order.filter(k=>data.selections[k]&&data.selections[k].value!==''&&(k!=='customColor'||data.selections[k].value)).map(k=>`<div class="line"><span>${labels[k]||k}</span><span>${data.selections[k].value}</span></div>`).join('');
+ total.textContent='$'+Number(data.total||0).toFixed(0);
+}
+document.getElementById('pay').onclick=async()=>{
+ const name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim(),phone=document.getElementById('phone').value.trim();
+ const err=document.getElementById('error');err.style.display='none';
+ if(!name||!email||!phone){err.textContent='Please enter your name, email, and phone number.';err.style.display='block';return;}
+ if(!data){return;}
+ const btn=document.getElementById('pay');btn.classList.add('loading');btn.textContent='OPENING SECURE CHECKOUT…';
+ try{const r=await fetch('/api/create-checkout-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer:{name,email,phone},build:data})});const out=await r.json();if(!r.ok)throw new Error(out.error||'Unable to start checkout.');window.location.href=out.url;}catch(e){err.textContent=e.message;err.style.display='block';btn.classList.remove('loading');btn.textContent='PAY IN FULL';}
+};
+</script><footer style="border-top:1px solid #222;padding:28px 6%;color:#888;font-size:13px;margin-top:40px"><a href="index.html" style="color:#bbb;text-decoration:none;margin-right:18px">Build Your Box</a><a href="support.html" style="color:#bbb;text-decoration:none;margin-right:18px">Customer Support</a><a href="return-policy.html" style="color:#bbb;text-decoration:none;margin-right:18px">Return Policy</a><span>© Built2BoomCustoms</span></footer></body></html>
