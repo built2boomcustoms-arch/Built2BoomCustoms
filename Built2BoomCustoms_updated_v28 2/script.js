@@ -212,48 +212,97 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCaseModal();});
 document.querySelectorAll('.option[data-group]').forEach(btn=>{
   btn.addEventListener('click',()=>{
     const group=btn.dataset.group;
+
+    // Extras (Q10) allows multiple selections
+    if(group==='extra'){
+      const value=btn.dataset.value;
+
+      if(value==='No Extras'){
+        document.querySelectorAll('[data-group="extra"]').forEach(x=>x.classList.remove('active'));
+        btn.classList.add('active');
+
+        state.extra={value:'No Extras',price:0};
+        delete state.extraBattery;
+        delete state.extraLogo;
+        delete state.chargingType;
+        delete state.customLogoText;
+        delete state.customLogoFont;
+        delete state.customLogoLocation;
+
+        document.getElementById('chargingPortWrap').style.display='none';
+        document.getElementById('logoWrap').style.display='none';
+      } else {
+        // Remove "No Extras"
+        const noExtras=document.querySelector('[data-group="extra"][data-value="No Extras"]');
+        if(noExtras) noExtras.classList.remove('active');
+
+        // Toggle this option
+        btn.classList.toggle('active');
+
+        if(btn.classList.contains('active')){
+          if(value==='Battery Voltage and Charging Port'){
+            state.extraBattery={value:value,price:Number(btn.dataset.price)};
+            if(!state.chargingType) state.chargingType={value:'Type C',price:0};
+          }
+
+          if(value==='Custom Name / Logo'){
+            state.extraLogo={value:value,price:Number(btn.dataset.price)};
+          }
+        } else {
+          if(value==='Battery Voltage and Charging Port'){
+            delete state.extraBattery;
+            delete state.chargingType;
+          }
+
+          if(value==='Custom Name / Logo'){
+            delete state.extraLogo;
+            delete state.customLogoText;
+            delete state.customLogoFont;
+            delete state.customLogoLocation;
+          }
+        }
+
+        const batterySelected=!!state.extraBattery;
+        const logoSelected=!!state.extraLogo;
+
+        document.getElementById('chargingPortWrap').style.display=batterySelected?'block':'none';
+        document.getElementById('logoWrap').style.display=logoSelected?'block':'none';
+
+        const extras=[];
+        let extraPrice=0;
+
+        if(state.extraBattery){
+          extras.push(state.extraBattery.value);
+          extraPrice+=state.extraBattery.price;
+        }
+
+        if(state.extraLogo){
+          extras.push(state.extraLogo.value);
+          extraPrice+=state.extraLogo.price;
+        }
+
+        if(extras.length){
+          state.extra={value:extras.join(' + '),price:extraPrice};
+        } else {
+          state.extra={value:'No Extras',price:0};
+          if(noExtras) noExtras.classList.add('active');
+        }
+      }
+
+      render();
+      return;
+    }
+
+    // All other questions remain single-select
     document.querySelectorAll(`[data-group="${group}"]`).forEach(x=>x.classList.remove('active'));
     btn.classList.add('active');
     state[group]={value:btn.dataset.value,price:Number(btn.dataset.price)};
+
     if(group==='power'){
       document.getElementById('otherPowerWrap').style.display=btn.dataset.value==='Other'?'block':'none';
       if(btn.dataset.value!=='Other') delete state.otherPower;
     }
-    if(group==='extra'){
-      const needsCharging=btn.dataset.value==='Charging Port'||btn.dataset.value==='Battery Voltage and Charging Port';
-      const needsLogo=btn.dataset.value==='Custom Name / Logo';
-      document.getElementById('chargingPortWrap').style.display=needsCharging?'block':'none';
-      document.getElementById('logoWrap').style.display=needsLogo?'block':'none';
-      if(!needsCharging) delete state.chargingType;
-      else if(!state.chargingType) state.chargingType={value:'Type C',price:0};
-      if(!needsLogo){delete state.customLogoText;delete state.customLogoFont;delete state.customLogoLocation;}
-    }
+
     render();
   });
 });
-
-document.querySelectorAll('[data-group="chargingType"]').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('[data-group="chargingType"]').forEach(x=>x.classList.remove('active'));
-    btn.classList.add('active');
-    state.chargingType={value:btn.dataset.value,price:Number(btn.dataset.price)};
-    render();
-  });
-});
-
-document.getElementById('otherPower').addEventListener('input',e=>{
-  state.otherPower={value:e.target.value||'Other',price:0};
-  render();
-});
-
-document.getElementById('customColor').addEventListener('input',e=>{
-  state.customColor={value:e.target.value||'',price:0};
-  render();
-});
-
-document.getElementById('logoText').addEventListener('input',e=>{state.customLogoText={value:e.target.value||'',price:0};render();});
-document.getElementById('logoFont').addEventListener('input',e=>{state.customLogoFont={value:e.target.value||'',price:0};render();});
-document.getElementById('logoLocation').addEventListener('change',e=>{state.customLogoLocation={value:e.target.value||'',price:0};render();});
-
-render();
-
