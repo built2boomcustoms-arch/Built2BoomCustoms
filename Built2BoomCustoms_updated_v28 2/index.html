@@ -293,12 +293,63 @@ function updateSubwoofer(){
     countInline.style.display='none';
     state.subCount={value:'1 Subwoofer',price:0};
   }
-  const brandCurrent=state.subBrand?.value && Object.prototype.hasOwnProperty.call(subwooferBrands,state.subBrand.value) ? state.subBrand.value : 'Kicker';
-  const subCountNum=state.subCount?.value==='2 Subwoofers'?2:1;
-  state.subBrand={value:brandCurrent,price:subwooferBrands[brandCurrent]*subCountNum};
-  brandBox.innerHTML=Object.entries(subwooferBrands).map(([name,per])=>{const total=per*subCountNum;return `<button type=\"button\" class=\"option ${brandCurrent===name?'active':''}\" data-group=\"subBrand\" data-value=\"${name}\" data-per-price=\"${per}\" data-price=\"${total}\">${name} — $${total}${per>0?' ('+per+' each)':''}</button>`}).join('');
-  brandBox.querySelectorAll('[data-group=\"subBrand\"]').forEach(btn=>btn.onclick=()=>{brandBox.querySelectorAll('.option').forEach(x=>x.classList.remove('active'));btn.classList.add('active');const per=Number(btn.dataset.perPrice||0);state.subBrand={value:btn.dataset.value,price:per*subCountNum};state.subCount.price=per*subCountNum;render();});
+  const brandCurrent =
+  state.subBrand?.value &&
+  Object.prototype.hasOwnProperty.call(subwooferBrands,state.subBrand.value)
+    ? state.subBrand.value
+    : 'Kicker';
 
+const subCountNum =
+  state.subCount?.value === '2 Subwoofers' ? 2 : 1;
+
+state.subBrand = {
+  value: brandCurrent,
+  price: subwooferBrands[brandCurrent] * subCountNum
+};
+
+brandBox.innerHTML = Object.entries(subwooferBrands).map(([name,per]) => {
+  const total = per * subCountNum;
+
+  return `
+    <button
+      type="button"
+      class="option ${brandCurrent === name ? 'active' : ''}"
+      data-group="subBrand"
+      data-value="${name}"
+      data-per-price="${per}"
+      data-price="${total}"
+    >
+      ${name} — $${total}${per > 0 ? ` (${per} each)` : ''}
+    </button>
+  `;
+}).join('');
+
+brandBox.querySelectorAll('[data-group="subBrand"]').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    brandBox.querySelectorAll('[data-group="subBrand"]')
+      .forEach(x => x.classList.remove('active'));
+
+    btn.classList.add('active');
+
+    const per = Number(btn.dataset.perPrice || 0);
+    const total = per * subCountNum;
+
+    state.subBrand = {
+      value: btn.dataset.value,
+      price: total
+    };
+
+    state.subCount = {
+      value: state.subCount?.value || '1 Subwoofer',
+      price: 0
+    };
+
+    render();
+  });
+});
   const sizes=subwooferSizes[caseValue]||subwooferSizes['1800'];
   const allowOutside=!['1800','2800','3800','4800'].includes(caseValue);
   const outside=inline.querySelector('[data-value="Outside Box"]');
